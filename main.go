@@ -104,7 +104,7 @@ func main() {
 	var replyToUsername string
 	if *replyToPtr != 0 {
 		if *debug {
-			color.HiBlack("[debug] user will reply to tweet with id", *replyToPtr)
+			color.HiBlack("[debug] user will reply to tweet with id %d", *replyToPtr)
 			color.HiBlack("[debug] fetching tweet to make sure it exists...")
 		}
 		t, _, err := client.Statuses.Show(*replyToPtr, nil)
@@ -127,7 +127,7 @@ func main() {
 	}
 
 	if *replyToPtr != 0 {
-		tweetTextJoined = fmt.Sprintf("@%s %s", replyToUsername, tweetText)
+		tweetTextJoined = fmt.Sprintf("@%s %s", replyToUsername, tweetTextJoined)
 	}
 
 	if len(tweetText) >= TwitterMaxCharacters {
