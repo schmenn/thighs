@@ -3,12 +3,12 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"github.com/vysiondev/thighs/utils"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 	"sync"
-	"twitter-sender/utils"
 )
 
 func CallInit(c *http.Client, size int64, contentType string) (int64, error) {

@@ -6,10 +6,6 @@ import (
 	"os"
 )
 
-type PlaceFile struct {
-	Places []Place
-}
-
 type Place struct {
 	ID   string  `json:"id"`
 	Lat  float64 `json:"lat"`
@@ -18,15 +14,16 @@ type Place struct {
 }
 
 func ParsePlacesFile() (*[]Place, error) {
-	var placeFile *PlaceFile
-	j, err := os.Open(PlacesFile)
+	var placeFile []Place
+	j, err := os.ReadFile(PlacesFile)
 	if err != nil {
 		color.HiYellow("[!] A places.json file was not detected; this is fine")
-		return nil, nil
-	}
-	err = json.NewDecoder(j).Decode(&placeFile)
-	if err != nil {
 		return nil, err
 	}
-	return &placeFile.Places, nil
+	err = json.Unmarshal(j, &placeFile)
+	if err != nil {
+		color.HiYellow("[!] places.json could not be read; this is fine")
+		return nil, err
+	}
+	return &placeFile, nil
 }

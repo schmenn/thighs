@@ -9,5 +9,15 @@
 		"lat": 38.897957,
 		"long": -77.036560,
 		"name": "The White House"
-	}]
+	}, {
+    "id": "area51",
+    "lat": 37.2431,
+    "long": -115.7930,
+    "name": "Area 51 | Homey Airport | Groom Lake"
+  }, {
+    "id": "nsi",
+    "lat": 11.5504,
+    "long": 92.2335,
+    "name": "North Sentinel Island"
+  }]
 }
