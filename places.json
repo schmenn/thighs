@@ -1,0 +1,13 @@
+{
+	"places": [{
+		"id": "nk",
+		"lat": 40.3399,
+		"long": 127.5101,
+		"name": "North Korea"
+	}, {
+		"id": "whitehouse",
+		"lat": 38.897957,
+		"long": -77.036560,
+		"name": "The White House"
+	}]
+}
