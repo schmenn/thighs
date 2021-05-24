@@ -81,15 +81,6 @@ func main() {
 		color.HiBlack("[debug] tweet text: %s", tweetTextJoined)
 	}
 
-	if *latPtr != 0.0 && math.Abs(*latPtr) > MaxLatitude {
-		color.HiRed("[!] Latitude must be within %f and %f.", MaxLatitude, -MaxLatitude)
-		return
-	}
-	if *longPtr != 0.0 && math.Abs(*longPtr) > MaxLongitude {
-		color.HiRed("[!] Longitude must be within %f and %f.", MaxLongitude, -MaxLongitude)
-		return
-	}
-
 	if *chunkIntervalPtr < 0 {
 		color.HiRed("[!] Chunk interval should not be less than 0ms.")
 		return
@@ -118,6 +109,15 @@ func main() {
 				color.HiYellow("[!] You specified -placeid, but none of your places matched the ID you specified. It will be ignored.")
 			}
 		}
+	}
+
+	if *latPtr != 0.0 && math.Abs(*latPtr) > MaxLatitude {
+		color.HiRed("[!] Latitude must be within %f and %f.", MaxLatitude, -MaxLatitude)
+		return
+	}
+	if *longPtr != 0.0 && math.Abs(*longPtr) > MaxLongitude {
+		color.HiRed("[!] Longitude must be within %f and %f.", MaxLongitude, -MaxLongitude)
+		return
 	}
 
 	var replyToUsername string
