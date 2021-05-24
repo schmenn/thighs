@@ -8,12 +8,12 @@ import (
 	"github.com/dghubble/oauth1"
 	"github.com/fatih/color"
 	"github.com/joho/godotenv"
+	"github.com/vysiondev/thighs/utils"
 	"io"
 	"os"
 	"strings"
 	"sync"
 	"time"
-	"twitter-sender/utils"
 )
 
 const (
