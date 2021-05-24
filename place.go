@@ -24,7 +24,6 @@ func ParsePlacesFile() (*[]Place, error) {
 		color.HiYellow("[!] A places.json file was not detected; this is fine")
 		return nil, nil
 	}
-	color.HiBlack("places.json file detected; parsing")
 	err = json.NewDecoder(j).Decode(&placeFile)
 	if err != nil {
 		return nil, err

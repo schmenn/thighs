@@ -57,7 +57,7 @@ func CallAppend(mediaID int64, segmentID int64, buf *[]byte, c *http.Client, ch 
 		"command":       "APPEND",
 		"media_id":      strconv.FormatInt(mediaID, 10),
 		"segment_index": strconv.FormatInt(segmentID, 10),
-	}, *buf)
+	}, buf)
 	if err != nil {
 		ch <- &AppendResponse{
 			SegmentID:  segmentID,

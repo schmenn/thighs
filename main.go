@@ -24,10 +24,12 @@ const (
 	TwitterMediaAPI      = "https://upload.twitter.com"
 	TwitterMaxCharacters = 280
 	StatusCheckCap       = 10
+	NewChunkWaitTime     = 25
 	PlacesFile           = "places.json"
 	TweetImage           = "tweet_image"
 	TweetVideo           = "tweet_video"
 	TweetGif             = "tweet_gif"
+	Version              = "0.0.2"
 )
 
 func main() {
@@ -69,7 +71,7 @@ func main() {
 	tweetText := flag.Args()
 	tweetTextJoined := strings.Join(tweetText, " ")
 
-	color.HiBlue("---- thighs: Custom Twitter source messages ----\nhttps://github.com/vysiondev/thighs")
+	color.HiBlue("---- thighs: Custom Twitter source messages version %s ----\nhttps://github.com/vysiondev/thighs", Version)
 
 	if *debug {
 		color.HiBlack("[debug] tweet text: %s", tweetTextJoined)
@@ -91,7 +93,7 @@ func main() {
 					*latPtr = p.Lat
 					*longPtr = p.Long
 					match = true
-					color.HiBlack("Using location %s with lat: %f, long: %f", p.Name, p.Lat, p.Long)
+					color.White("Using location %s with lat: %f, long: %f", p.Name, p.Lat, p.Long)
 					break
 				}
 			}
@@ -187,7 +189,7 @@ func main() {
 				return
 			}
 			if *debug {
-				color.HiBlack("[debug] opening INIT request")
+				color.HiBlack("[debug] making INIT request")
 			}
 			mediaID, err := CallInit(httpClient, fstat.Size(), contentType)
 			if err != nil {
@@ -195,8 +197,7 @@ func main() {
 				return
 			}
 			if *debug {
-				color.HiBlack("[debug] INIT done; got media ID %d", mediaID)
-				color.HiBlack("[debug] starting loop for chunked uploading")
+				color.HiBlack("[debug] INIT successful; got media ID %d", mediaID)
 			}
 			var segmentID int64
 			reader := bufio.NewReader(file)
@@ -210,12 +211,15 @@ func main() {
 			appendResponseChan := make(chan *AppendResponse)
 			var wg sync.WaitGroup
 
+			if *debug {
+				color.HiBlack("[debug] upload starting")
+			}
 			for {
-				if *debug {
-					color.HiBlack("[debug] preparing segment %d for async upload", segmentID)
-				}
 				n, err := io.ReadFull(reader, buf[:cap(buf)])
 				buf = buf[:n]
+				if *debug {
+					color.HiBlack("[debug] [async:%d] %d bytes to be uploaded", segmentID, len(buf))
+				}
 				if err != nil {
 					if err != io.EOF && err != io.ErrUnexpectedEOF {
 						color.HiRed("[!] Failed to read the file into a buffer because of something other than EOF: %s.", err.Error())
@@ -229,6 +233,9 @@ func main() {
 				wg.Add(1)
 				go CallAppend(mediaID, segmentID, &buf, httpClient, appendResponseChan, &wg)
 				segmentID++
+
+				// not sure what's causing chunks to write the wrong # of bytes unless there's a short delay...
+				time.Sleep(time.Millisecond * time.Duration(NewChunkWaitTime))
 			}
 
 			go func() {
@@ -246,12 +253,12 @@ func main() {
 					return
 				}
 				if *debug {
-					color.HiBlack("[debug] segment %d finished", a.SegmentID)
+					color.HiBlack("[debug] [async:%d] done; status %d", a.SegmentID, a.StatusCode)
 				}
 			}
 
 			if *debug {
-				color.HiBlack("[debug] async upload finished")
+				color.HiBlack("[debug] upload finished")
 			}
 
 			wait, e := CallFinalize(mediaID, httpClient)
@@ -287,7 +294,7 @@ func main() {
 					if statusObject.ProcessingInfo.State != "in_progress" {
 						break
 					}
-					color.HiBlack("File is being processed on Twitter's end (progress: %d%%). Checking again after %d seconds", statusObject.ProcessingInfo.ProgressPercent, statusObject.ProcessingInfo.CheckAfterSecs)
+					color.HiBlack("File is being processed (progress: %d%%). Checking again after %d seconds", statusObject.ProcessingInfo.ProgressPercent, statusObject.ProcessingInfo.CheckAfterSecs)
 					statusChecks++
 					time.Sleep(time.Second * time.Duration(status.ProcessingInfo.CheckAfterSecs))
 				}
