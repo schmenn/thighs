@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/fatih/color"
 	"os"
 )
 
@@ -14,15 +13,21 @@ type Place struct {
 }
 
 func ParsePlacesFile() (*[]Place, error) {
+	// checks to make sure file exists first.
+	// any errors thrown by stat will mean that the file probably can't be read
+	// due to not existing, lack of permissions, etc.
+	_, err := os.Stat(PlacesFile)
+	if err != nil {
+		return nil, nil
+	}
+
 	var placeFile []Place
 	j, err := os.ReadFile(PlacesFile)
 	if err != nil {
-		color.HiYellow("[!] A places.json file was not detected; this is fine")
 		return nil, err
 	}
 	err = json.Unmarshal(j, &placeFile)
 	if err != nil {
-		color.HiYellow("[!] places.json could not be read; this is fine")
 		return nil, err
 	}
 	return &placeFile, nil
