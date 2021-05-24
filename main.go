@@ -10,6 +10,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/vysiondev/thighs/utils"
 	"io"
+	"math"
 	"os"
 	"strings"
 	"sync"
@@ -17,19 +18,21 @@ import (
 )
 
 const (
-	OAuthConsumerKey     = "OAUTH_CONSUMER_KEY"
-	OAuthConsumerSecret  = "OAUTH_CONSUMER_SECRET"
-	OAuthToken           = "OAUTH_TOKEN"
-	OAuthTokenSecret     = "OAUTH_TOKEN_SECRET"
-	TwitterMediaAPI      = "https://upload.twitter.com"
-	TwitterMaxCharacters = 280
-	StatusCheckCap       = 10
-	NewChunkWaitTime     = 25
-	PlacesFile           = "places.json"
-	TweetImage           = "tweet_image"
-	TweetVideo           = "tweet_video"
-	TweetGif             = "tweet_gif"
-	Version              = "0.0.2"
+	OAuthConsumerKey        = "OAUTH_CONSUMER_KEY"
+	OAuthConsumerSecret     = "OAUTH_CONSUMER_SECRET"
+	OAuthToken              = "OAUTH_TOKEN"
+	OAuthTokenSecret        = "OAUTH_TOKEN_SECRET"
+	TwitterMediaAPI         = "https://upload.twitter.com"
+	TwitterMaxCharacters    = 280
+	StatusCheckCap          = 10
+	NewChunkDefaultWaitTime = 25
+	PlacesFile              = "places.json"
+	TweetImage              = "tweet_image"
+	TweetVideo              = "tweet_video"
+	TweetGif                = "tweet_gif"
+	Version                 = "0.0.3"
+	MaxLatitude             = 90.0
+	MaxLongitude            = 180.0
 )
 
 func main() {
@@ -61,6 +64,7 @@ func main() {
 	mediaPtr := flag.String("media", "", "A list of media files following the format 1,2,3,4. Needs to be an image, video, or GIF. Note that you can either: use 4 images OR 1 video OR 1 GIF per tweet. ")
 	debug := flag.Bool("debug", false, "Specify this to view detailed logs")
 	placeIDPtr := flag.String("placeid", "", "If you have places.json in your folder, specify the ID to use.")
+	chunkIntervalPtr := flag.Int64("chunk-interval", NewChunkDefaultWaitTime, "Change the interval (in ms) at which a buffer is read from media and sent as an asynchronous POST request.")
 
 	flag.Parse()
 
@@ -77,15 +81,28 @@ func main() {
 		color.HiBlack("[debug] tweet text: %s", tweetTextJoined)
 	}
 
-	places, err := ParsePlacesFile()
-	if err != nil {
-		color.HiRed("Could not parse your places.json file. %s", err.Error())
+	if *latPtr != 0.0 && math.Abs(*latPtr) > MaxLatitude {
+		color.HiRed("[!] Latitude must be within %f and %f.", MaxLatitude, -MaxLatitude)
+		return
+	}
+	if *longPtr != 0.0 && math.Abs(*longPtr) > MaxLongitude {
+		color.HiRed("[!] Longitude must be within %f and %f.", MaxLongitude, -MaxLongitude)
+		return
+	}
+
+	if *chunkIntervalPtr < 0 {
+		color.HiRed("[!] Chunk interval should not be less than 0ms.")
 		return
 	}
 
 	if *placeIDPtr != "" {
+		places, err := ParsePlacesFile()
+		if err != nil {
+			color.HiRed("Could not parse your places.json file. %s", err.Error())
+			return
+		}
 		if places == nil {
-			color.HiYellow("[!] You specified -placeid, but do not have a places.json file that was parsed. It will be ignored.")
+			color.HiYellow("[!] You specified -placeid, but the places.json file was not parsed because either the program lacks permissions, or it doesn't exist. It will be ignored.")
 		} else {
 			match := false
 			for _, p := range *places {
@@ -207,7 +224,7 @@ func main() {
 				color.HiBlack("[debug] chunk size (%d * 0.30) is %d", fstat.Size(), chunkSize)
 			}
 			buf := make([]byte, 0, chunkSize)
-			needToWait := false
+			needToWaitSecs := 0
 			appendResponseChan := make(chan *AppendResponse)
 			var wg sync.WaitGroup
 
@@ -235,7 +252,7 @@ func main() {
 				segmentID++
 
 				// not sure what's causing chunks to write the wrong # of bytes unless there's a short delay...
-				time.Sleep(time.Millisecond * time.Duration(NewChunkWaitTime))
+				time.Sleep(time.Millisecond * time.Duration(*chunkIntervalPtr))
 			}
 
 			go func() {
@@ -266,24 +283,27 @@ func main() {
 				color.HiRed("[!] Error while calling FINALIZE: %s.", e.Error())
 				return
 			}
-			needToWait = wait
+			needToWaitSecs = wait
 			if *debug {
 				color.HiBlack("[debug] FINALIZE call successful")
-				if needToWait {
+				if needToWaitSecs > 0 {
 					color.HiBlack("[debug] FINALIZE says upload is not done processing; we need to wait")
 				}
 			}
 
-			if needToWait {
+			if needToWaitSecs > 0 {
 				statusChecks := 0
 				var status *MediaStatusResponse
+				color.HiBlack("Twitter is processing the file; checking again after %d seconds", needToWaitSecs)
+				// initial thread sleep because we get time to wait from FINALIZE
+				time.Sleep(time.Second * time.Duration(needToWaitSecs))
 				for {
 					if statusChecks > StatusCheckCap {
 						color.HiRed("[!] Waited for too long for upload to complete. Bailing out")
 						return
 					}
 					if *debug {
-						color.HiBlack("[debug] calling STATUS on media id %d (try %d of %d)", mediaID, statusChecks+1, StatusCheckCap)
+						color.HiBlack("[debug] calling STATUS (try %d of %d)", statusChecks+1, StatusCheckCap)
 					}
 					statusObject, err := CallStatus(mediaID, httpClient)
 					if err != nil {
@@ -294,7 +314,7 @@ func main() {
 					if statusObject.ProcessingInfo.State != "in_progress" {
 						break
 					}
-					color.HiBlack("File is being processed (progress: %d%%). Checking again after %d seconds", statusObject.ProcessingInfo.ProgressPercent, statusObject.ProcessingInfo.CheckAfterSecs)
+					color.HiBlack("Processing (%d%%); checking again after %d seconds", statusObject.ProcessingInfo.ProgressPercent, statusObject.ProcessingInfo.CheckAfterSecs)
 					statusChecks++
 					time.Sleep(time.Second * time.Duration(status.ProcessingInfo.CheckAfterSecs))
 				}
@@ -325,7 +345,8 @@ func main() {
 	}
 
 	color.White("Sending tweet...")
-	tweet, _, err := client.Statuses.Update(tweetTextJoined, &twitter.StatusUpdateParams{
+
+	tweet, res, err := client.Statuses.Update(tweetTextJoined, &twitter.StatusUpdateParams{
 		Status:            "",
 		InReplyToStatusID: *replyToPtr,
 		PossiblySensitive: nil,
@@ -340,6 +361,11 @@ func main() {
 		color.HiRed("[!] Failed to send tweet. %s", err.Error())
 		return
 	}
+	if res.StatusCode > 299 || res.StatusCode < 200 {
+		color.HiRed("[!] Did not get a 2xx response; this indicates that the Tweet did not send successfully.")
+		return
+	}
+	_ = res.Body.Close()
 	color.HiGreen("Tweet successfully posted! You can find it at:\n" + fmt.Sprintf("https://twitter.com/%s/status/%s", tweet.User.ScreenName, tweet.IDStr))
 	return
 }

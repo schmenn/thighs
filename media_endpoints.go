@@ -81,29 +81,29 @@ func CallAppend(mediaID int64, segmentID int64, buf *[]byte, c *http.Client, ch 
 	return
 }
 
-func CallFinalize(mediaID int64, c *http.Client) (bool, error) {
+func CallFinalize(mediaID int64, c *http.Client) (int, error) {
 	res, err := c.PostForm(TwitterMediaAPI+"/1.1/media/upload.json", url.Values{
 		"command":  {"FINALIZE"},
 		"media_id": {strconv.FormatInt(mediaID, 10)},
 	})
 	if err != nil {
-		return false, err
+		return 0, err
 	}
 	if res.StatusCode < 200 || res.StatusCode > 299 {
 		_ = res.Body.Close()
-		return false, errors.New("non 2xx response code: " + strconv.FormatInt(int64(res.StatusCode), 10))
+		return 0, errors.New("non 2xx response code: " + strconv.FormatInt(int64(res.StatusCode), 10))
 	}
 	var b *MediaFinalizeResponse
 	err = json.NewDecoder(res.Body).Decode(&b)
 	if err != nil {
 		_ = res.Body.Close()
-		return false, err
+		return 0, err
 	}
 	_ = res.Body.Close()
 	if b.ProcessingInfo != nil {
-		return true, nil
+		return b.ProcessingInfo.CheckAfterSecs, nil
 	}
-	return false, nil
+	return 0, nil
 }
 
 func CallStatus(mediaID int64, c *http.Client) (*MediaStatusResponse, error) {

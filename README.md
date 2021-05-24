@@ -32,6 +32,7 @@ OAUTH_TOKEN_SECRET=
 |`-long`|Longitude of the tweet location|
 |`-placeid`|**see the next section for more information on places.json**. If you have `places.json` in your folder, specify the index of a place to use, referencing the `id` field of the place. For example, if you set a place id to `cool`, use `-placeid cool`. This will override `-lat` and `-long` if they were manually specified.|
 |`-debug`|Shows more logs. Does not need any additional arguments.|
+|`-chunk-interval`|Change the interval (in ms) at which a buffer is read from media and sent as an asynchronous POST request. By default, it is 25 ms. Try changing this to a higher number if your uploads are failing.
 
 ## Places.json
 
@@ -50,4 +51,9 @@ Reply to a Tweet with message "sussy":
 Add 2 images to a Tweet with message "sus af", and set the lat/long of the post to 100:
 
 `thighs -media "image 1.png,image 2.png" -lat 100.0 -long 100.0 sus af`
+
+### Notes
+
+- If you want to put in mentions, just @mention the person like normal.
+- Quotes can be typed in tweet text using `\"` and `\'`.
 
