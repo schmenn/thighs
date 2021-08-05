@@ -4,17 +4,18 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"github.com/dghubble/go-twitter/twitter"
-	"github.com/dghubble/oauth1"
-	"github.com/fatih/color"
-	"github.com/joho/godotenv"
-	"github.com/vysiondev/thighs/utils"
 	"io"
 	"math"
 	"os"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/dghubble/go-twitter/twitter"
+	"github.com/dghubble/oauth1"
+	"github.com/fatih/color"
+	"github.com/joho/godotenv"
+	"github.com/vysiondev/thighs/utils"
 )
 
 const (
@@ -97,7 +98,7 @@ func main() {
 		} else {
 			match := false
 			for _, p := range *places {
-				if strings.ToLower(p.ID) == strings.ToLower(*placeIDPtr) {
+				if strings.EqualFold(p.ID, *placeIDPtr) {
 					*latPtr = p.Lat
 					*longPtr = p.Long
 					match = true
@@ -169,7 +170,7 @@ func main() {
 			color.HiBlack("[debug] %d media files to upload", len(mediaSplit))
 		}
 		for _, f := range mediaSplit {
-			if specialFileUploaded == true {
+			if specialFileUploaded {
 				color.HiYellow("[!] An image/video was already processed; skipping all other files.")
 				break
 			}
@@ -367,5 +368,4 @@ func main() {
 	}
 	_ = res.Body.Close()
 	color.HiGreen("Tweet successfully posted! You can find it at:\n" + fmt.Sprintf("https://twitter.com/%s/status/%s", tweet.User.ScreenName, tweet.IDStr))
-	return
 }

@@ -1,6 +1,7 @@
 [
 	{
 		"id": "nk",
+
 		"lat": 40.3399,
 		"long": 127.5101,
 		"name": "North Korea"
@@ -8,13 +9,13 @@
 	{
 		"id": "whitehouse",
 		"lat": 38.897957,
-		"long": -77.036560,
+		"long": -77.03656,
 		"name": "The White House"
 	},
 	{
 		"id": "area51",
 		"lat": 37.2431,
-		"long": -115.7930,
+		"long": -115.793,
 		"name": "Area 51 | Homey Airport | Groom Lake"
 	},
 	{
@@ -22,6 +23,35 @@
 		"lat": 11.5504,
 		"long": 92.2335,
 		"name": "North Sentinel Island"
+	},
+	{
+		"id": "snake",
+		"lat": -24.4879,
+		"long": -46.6742,
+		"name": "Snake Island"
+	},
+	{
+		"id": "dolls",
+		"lat": 19.2902,
+		"long": -99.0965,
+		"name": "Island of the Dead Dolls"
+	},
+	{
+		"id": "north_pole",
+		"lat": 90.0,
+		"long": -135.0,
+		"name": "North Pole"
+	},
+	{
+		"id": "south_pole",
+		"lat": -90.0,
+		"long": 45.0,
+		"name": "South Pole"
+	},
+	{
+		"id": "everest",
+		"lat": 27.986065,
+		"long": 86.922623,
+		"name": "Mount Everest"
 	}
 ]
-

@@ -3,12 +3,13 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"github.com/vysiondev/thighs/utils"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/vysiondev/thighs/utils"
 )
 
 func CallInit(c *http.Client, size int64, contentType string) (int64, error) {
@@ -16,7 +17,6 @@ func CallInit(c *http.Client, size int64, contentType string) (int64, error) {
 	switch contentType {
 	case "image/png", "image/jpg", "image/jpeg", "image/webp":
 		mediaCategory = TweetImage
-		break
 	case "image/gif":
 		mediaCategory = TweetGif
 	}
@@ -78,7 +78,6 @@ func CallAppend(mediaID int64, segmentID int64, buf *[]byte, c *http.Client, ch 
 		SegmentID:  segmentID,
 		StatusCode: res.StatusCode,
 	}
-	return
 }
 
 func CallFinalize(mediaID int64, c *http.Client) (int, error) {

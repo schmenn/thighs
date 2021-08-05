@@ -6,7 +6,6 @@ import (
 )
 
 func GetFileContentType(out *os.File) (string, error) {
-
 	buffer := make([]byte, 512)
 
 	_, err := out.Read(buffer)
